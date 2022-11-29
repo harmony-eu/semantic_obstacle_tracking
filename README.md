@@ -26,19 +26,40 @@ An obstacle is assigned to a bounding box if their normalized intersection is hi
 
 
 
-## Usage
-- start YOLO node
-- start obstacle tracking (see [moving_object_tracking](https://github.com/harmony-eu/moving_object_tracking))
-- start node:
-    ```bash
-    ros2 launch bla bla
-    ```
+## Usage with obstacle tracking
+See documentation in [https://github.com/harmony-eu/moving_object_tracking/tree/humble-devel](https://github.com/harmony-eu/moving_object_tracking/tree/humble-devel).
+
+## Standalone usage
+Standalone launch file is:
+```bash
+ros2 launch semantic_tracking tracking.launch.py
+```
+
+**Arguments:**
+- cameras: list of all camera namespaces (list of strings)
+- camera_links: list of all the camera TF links (list of strings)
+- yolo_topic: yolo topic (input)
+- obstacles_topic: topic of tracked obstacles (input)
+- obstacles_topic_vis: topic of tracked obstacles visualization (input)
+- semantic_obstacles_topic (output)
+- semantic_obstacles_topic_vis (output)
+
+**Other node params:**
+- **image_floor_margin**: \
+YOLO bounding boxes for object that cross the edge of the image typically don't reach the edge pixels. To account for this, "lift" the obstacle projections to image space along the vertical axis until they reach the image_floor_margin. Normalized value between 0 (top line) and 1 (bottom line), default is 0.9.
+- **intersection_threshold**: \
+An obstacle belongs to a bounding box if at least a fraction of its points are projected inside the box. Normalized value between 0 (no points) and 1 (all points), default is 0.5.
+- **lidar_height**: \
+The lidar height for now is unfortunately hardcoded (default is 0.32 meters for the ABB robot). The lidar height of the ridgeback if 0.23.
+- **image_plane_threshold**: \
+An object cannot "belong" to a camera if its z-coordinate in camera-frame is less than image_plane_threshold (i.e. if image_plane_threshold = 0, excludes all obstacles behind the camera plane). Default is 0.3 meters.
+- **yolo_pixel_confidence_margin**: \
+Enlarge all YOLO boxes by this amount (in pixels) in each direction. Default is 20 pixels, increase if yolo boxes are low-quality.
+- **debug_vis_projection**: \
+Display color-coded obstacle projections onto an image stream for debug purposes. Default is false.
+- **rectified_input**: \
+True if the yolo bounding boxes are from rectified images, False otherwise. Default is False.
 
 
-**Parameters:**
-
-
-**Topics:**
-- /yolov5 topic (message_type `nmcl_msgs.msg.YoloCombinedArray`)
-- /tf (robot needs to be localized, TF from map to camera is needed)
-- /tracked_obstacles (message_type `obstacle_detector.msg.Obstacles`)
+**Notes:**
+- Needs /tf topic (robot needs to be localized, TF from object frame to camera frame is needed)

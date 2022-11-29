@@ -28,10 +28,10 @@ class SemanticObstacleMatcher(Node):
         self.declare_parameter('camera_links', ['list', 'of', 'tf', 'links'])
         self.declare_parameter('image_floor_margin', 0.9)
         self.declare_parameter('intersection_threshold', 0.5)
-        self.declare_parameter('lidar_height', 0.4)
+        self.declare_parameter('lidar_height', 0.32)
         self.declare_parameter('image_plane_threshold', 0.3)
         self.declare_parameter('yolo_pixel_confidence_margin', 20)
-        self.declare_parameter('debug_vis_projection', True)
+        self.declare_parameter('debug_vis_projection', False)
         self.declare_parameter('rectified_input', False)
 
 
