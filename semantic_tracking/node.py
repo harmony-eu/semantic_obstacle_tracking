@@ -39,6 +39,7 @@ class SemanticObstacleMatcher(Node):
         self.yolo_y_scaling_factor = 1080/480
         self.yolo_pixel_confidence_margin = 20
         self.debug_vis_projection = True
+        self.rectified_input = False
 
         self.class_ids_to_string = ['sink', 'door', 'oven', 'whiteboard', 'table', 'cardboard', 'plant', 'drawers', 'sofa', 'storage', 'chair', 'extinguisher', 'people', 'desk']
 
@@ -117,7 +118,8 @@ class SemanticObstacleMatcher(Node):
             if nlen < olen * self.intersection_threshold: continue
 
             # project points from image plane to pixel coordinates
-            res1, _ = cv2.projectPoints(points_c, np.zeros((3,1)), np.zeros((3,1)), camera.k, camera.d)
+            dist = np.zeros_like(camera.d) if self.rectified_input else camera.d
+            res1, _ = cv2.projectPoints(points_c, np.zeros((3,1)), np.zeros((3,1)), camera.k, dist)
             res1 = res1.astype(int).reshape((nlen, 2))
             # if the point is too low, bring it up to minimum eye level
             res1[res1[:, 1] > self.pixel_y_threshold, 1] = self.pixel_y_threshold
