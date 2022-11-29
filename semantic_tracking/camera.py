@@ -7,15 +7,18 @@ from sensor_msgs.msg import CameraInfo, CompressedImage
 
 
 class Camera:
-    def __init__(self, name, link, id) -> None:
+    def __init__(self, name, link, id=0) -> None:
         self.name = name
         self.link = link
         self.id = id
 
+        self.frame_id = None
         self.k = None
         self.d = None
+        self.height = None
+        self.width = None
 
-        self.current_yolo = None
+        self.current_yolo = []
 
         self.debug_detections = []
 
@@ -23,10 +26,14 @@ class Camera:
         self.t = None
 
 
-def get_info_callback(camera):
+def get_info_callback(camera: Camera):
     def info_callback(info: CameraInfo):
-        camera.k, camera.d = np.array(info.k), np.array(info.d)
-        camera.k.resize((3,3))
+        if camera.k is None: 
+            camera.k, camera.d = np.array(info.k), np.array(info.d)
+            camera.k.resize((3,3))
+            camera.frame_id = str(info.header.frame_id)
+            camera.height = info.height
+            camera.width = info.width
     return info_callback
 
 
@@ -37,7 +44,7 @@ def get_image_callback(camera):
         
         for det in camera.debug_detections:
             if det.semclass is None: color = np.array([255, 255, 255])
-            elif det.semclass == 12: color = np.array([255, 0, 0])
+            elif det.semclass == 'people': color = np.array([255, 0, 0])
             else: color = np.array([0, 0, 255])
             npix = det.pixel_coords.shape[0]
             det.pixel_coords.resize(npix, 2)

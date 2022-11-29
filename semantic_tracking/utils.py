@@ -15,6 +15,12 @@ def decode_tf(transform_msg):
     return R, t
 
 
+def get_camera(cameras, frame_id):
+    for camera in cameras:
+        if camera.frame_id == frame_id: return camera
+    return None
+
+
 def do_transform_points(point_np, r, t):
     """
     point_np: np.ndarray: pointcloud of shape (N, 3)
