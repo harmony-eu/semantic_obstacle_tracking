@@ -6,7 +6,7 @@ import typing
 from time import time as get_time
 
 from rclpy.node import Node
-from sensor_msgs.msg import CameraInfo, CompressedImage
+from sensor_msgs.msg import CameraInfo, CompressedImage, Image
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
@@ -24,14 +24,15 @@ class SemanticObstacleMatcher(Node):
 
     def __init__(self):
         super().__init__('semantic_tracking')
+        default_debug_channels = ['list', 'of', 'topics']
         self.declare_parameter('cameras', ['list', 'of', 'topics'])
         self.declare_parameter('camera_links', ['list', 'of', 'tf', 'links'])
         self.declare_parameter('image_floor_margin', 0.9)
         self.declare_parameter('intersection_threshold', 0.5)
-        self.declare_parameter('lidar_height', 0.32)
+        self.declare_parameter('lidar_height', -2000.0)
         self.declare_parameter('image_plane_threshold', 0.3)
         self.declare_parameter('yolo_pixel_confidence_margin', 20)
-        self.declare_parameter('debug_vis_projection', False)
+        self.declare_parameter('debug_topics', default_debug_channels)
         self.declare_parameter('rectified_input', False)
 
 
@@ -47,7 +48,8 @@ class SemanticObstacleMatcher(Node):
         self.lidar_height = self.get_parameter('lidar_height').value
         self.image_plane_threshold = self.get_parameter('image_plane_threshold').value
         self.yolo_pixel_confidence_margin = self.get_parameter('yolo_pixel_confidence_margin').value
-        self.debug_vis_projection = self.get_parameter('debug_vis_projection').value
+        self.debug_topics = self.get_parameter('debug_topics').value
+        if self.debug_topics == default_debug_channels: self.debug_topics = []
         self.rectified_input = self.get_parameter('rectified_input').value
 
         self.info_subs = []
@@ -55,11 +57,23 @@ class SemanticObstacleMatcher(Node):
             sub = self.create_subscription(
                 CameraInfo, camera.name + '/camera_info', get_info_callback(camera), 10)
             self.info_subs.append(sub)
+
+        self.debug_sub = []
+        for mtopic in self.debug_topics:
+            dcamera = get_camera_from_topic(self.cameras, mtopic)
+            if dcamera is None: continue
+            self.get_logger().info("Displaying debug camera stream for topic " + mtopic + " of camera " + dcamera.name)
+            compressed = bool('compressed' in mtopic or 'Compressed' in mtopic)
+            mType = CompressedImage if compressed else Image
+            self.debug_sub.append(self.create_subscription(
+                mType, mtopic, get_image_callback(dcamera, compressed), 10
+            ))
             
-        if self.debug_vis_projection:
-            debug_camera = self.cameras[0]
-            self.debug_sub = self.create_subscription(
-            CompressedImage, debug_camera.name + '/image_color/compressed', get_image_callback(debug_camera), 10)
+        # if len(self.debug_topics) > 0:
+        #     self.get_logger().info("Displaying debug camera stream")
+        #     debug_camera = self.cameras[self.debug_topics]
+        #     self.debug_sub = self.create_subscription(
+        #     CompressedImage, debug_camera.name + '/image_color/compressed', get_image_callback(debug_camera), 10)
 
         self.yolo_topic = "/yolov5"
         self.yolo_sub = self.create_subscription(BoundingBoxes, self.yolo_topic, self.yolo_callback, 10)
@@ -107,7 +121,7 @@ class SemanticObstacleMatcher(Node):
         for camera in self.cameras:
             # if len(camera.current_yolo) < 1: continue
             if camera.R is None: 
-                self.get_logger().info(f'TF not yet available for camera ' + str(camera.name))
+                self.get_logger().info(f'TF not yet available for camera ' + str(camera.name), throttle_duration_sec=3)
                 continue
             # lidar is ~ 40 cm off the ground?
             if self.lidar_height > -1000:

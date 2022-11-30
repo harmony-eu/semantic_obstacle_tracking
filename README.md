@@ -50,13 +50,13 @@ YOLO bounding boxes for object that cross the edge of the image typically don't 
 - **intersection_threshold**: \
 An obstacle belongs to a bounding box if at least a fraction of its points are projected inside the box. Normalized value between 0 (no points) and 1 (all points), default is 0.5.
 - **lidar_height**: \
-The lidar height for now is unfortunately hardcoded (default is 0.32 meters for the ABB robot). The lidar height of the ridgeback if 0.23.
+If for some reason the z-coordinate of the obstacles is wrong, then you can set the correct value here and it will be used to overwrite the z in the obstacle (0.32 meters for the ABB robot - lidar height of the ridgeback is 0.23). To NOT overwrite the values, set lidar_height=-2000 (default is -2000 i.e. OFF).
 - **image_plane_threshold**: \
 An object cannot "belong" to a camera if its z-coordinate in camera-frame is less than image_plane_threshold (i.e. if image_plane_threshold = 0, excludes all obstacles behind the camera plane). Default is 0.3 meters.
 - **yolo_pixel_confidence_margin**: \
 Enlarge all YOLO boxes by this amount (in pixels) in each direction. Default is 20 pixels, increase if yolo boxes are low-quality.
-- **debug_vis_projection**: \
-Display color-coded obstacle projections onto an image stream for debug purposes. Default is false.
+- **debug_topics**: \
+Display color-coded obstacle projections onto an image stream for debug purposes. List of topics (list of strings). Default is ['none'].
 - **rectified_input**: \
 True if the yolo bounding boxes are from rectified images, False otherwise. Default is False.
 

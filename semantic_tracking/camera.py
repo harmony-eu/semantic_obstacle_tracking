@@ -37,10 +37,19 @@ def get_info_callback(camera: Camera):
     return info_callback
 
 
-def get_image_callback(camera):
-    def image_callback(img: CompressedImage):
-        bridge = CvBridge()
-        image = bridge.compressed_imgmsg_to_cv2(img)
+def get_camera_from_topic(cameras, topic: str):
+    for camera in cameras:
+        if camera.name in topic: return camera
+    return None
+
+
+def get_image_callback(camera, compressed):
+
+    def image_callback(img):
+        mBridge = CvBridge().compressed_imgmsg_to_cv2 if compressed else CvBridge().imgmsg_to_cv2
+        image = mBridge(img)
+        # bridge = CvBridge()
+        # image = bridge.compressed_imgmsg_to_cv2(img)
         
         for det in camera.debug_detections:
             if det.semclass is None: color = np.array([255, 255, 255])
@@ -57,8 +66,8 @@ def get_image_callback(camera):
             x2, y2 = det.xmax, det.ymax
             cv2.rectangle(image,(x1,y1), (x2,y2), (0, 0, 255), 2)
             
-        cv2.namedWindow("output", cv2.WINDOW_NORMAL)
-        cv2.resizeWindow("output", 720, 480)
-        cv2.imshow("output", image)
+        cv2.namedWindow(camera.name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(camera.name, 720, 480)
+        cv2.imshow(camera.name, image)
         cv2.waitKey(1)
     return image_callback
