@@ -110,7 +110,8 @@ class SemanticObstacleMatcher(Node):
                 self.get_logger().info(f'TF not yet available for camera ' + str(camera.name))
                 continue
             # lidar is ~ 40 cm off the ground?
-            points[:, 2] = self.lidar_height
+            if self.lidar_height > -1000:
+                points[:, 2] = self.lidar_height
             # obst_frame -> camera_frame TF
             points_c = do_transform_points(points, camera.R, camera.t)
 
